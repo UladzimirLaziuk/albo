@@ -1,0 +1,10 @@
+db.sqlite3
+geckodriver.log
+albo/__pycache__/*
+*.pyc
+.idea/
+user_app/migrations/*
+staticfiles/
+
+.env
+.env_dev
