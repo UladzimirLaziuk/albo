@@ -5,6 +5,6 @@ albo/__pycache__/*
 .idea/
 user_app/migrations/*
 staticfiles/
-
+celerybeat-schedule
 .env
 .env_dev
