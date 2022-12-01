@@ -1,5 +1,6 @@
 from django.contrib.admin import site, AdminSite, ModelAdmin, TabularInline, StackedInline
 from django.contrib.auth.models import User, Group
+from django.utils.safestring import mark_safe
 
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.hashers import make_password
@@ -112,7 +113,7 @@ class ProductModelAdmin(ModelAdmin):
 class ProductInline(TabularInline):
     model = ProductModel
     extra = 1
-
+    readonly_fields = 'image_tag',
 
 class CategoryProductAdmin(ModelAdmin):
     inlines = [ProductInline, ]

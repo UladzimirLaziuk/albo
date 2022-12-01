@@ -115,7 +115,6 @@ class ProductModel(models.Model):
         verbose_name_plural = "Продукты"
 
     def image_tag(self):
-
         if self.url_image_albo:
             return mark_safe('<img src="%s" style="width:180px;height:180px;" />' % (self.url_image_albo))
         return mark_safe('<img src="" alt="%s" style="width:60px; height:60px;" />' % "noimagefound")
