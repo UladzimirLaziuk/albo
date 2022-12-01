@@ -107,7 +107,7 @@ class ProductModel(models.Model):
     uniq_code = models.CharField(max_length=20, default='', verbose_name='Код товара')
     describe = models.CharField(max_length=255, default='', verbose_name='Описание товара')
     url_describe = models.URLField(verbose_name="Ссылка на описание товара на сайте", default='', max_length=100)
-    url_describe_two = models.URLField(verbose_name="Ссылка на фото товара на сайте", default='', max_length=100)
+    url_image_albo = models.URLField(verbose_name="Ссылка на фото товара на сайте", default='', max_length=100)
     price_sample = models.FloatField(verbose_name='Цена обычная')
 
     class Meta:
@@ -115,7 +115,10 @@ class ProductModel(models.Model):
         verbose_name_plural = "Продукты"
 
     def image_tag(self):
-        return mark_safe('<img src="%s" width="150" height="100" />' % (self.url_describe_two))
+
+        if self.url_image_albo:
+            return mark_safe('<img src="%s" style="width:180px;height:180px;" />' % (self.url_image_albo))
+        return mark_safe('<img src="" alt="%s" style="width:60px; height:60px;" />' % "noimagefound")
 
     def full_url(self):
         return format_html("<a href='%s'>Ссылка на товар %s на сайте </a>" %
@@ -157,7 +160,8 @@ class UserActivityTrack(models.Model):
     user_agent = models.CharField(max_length=255)
 
     def __str__(self):
-        return _(f'{self.user.get_full_name}')
+        name = self.user.get_full_name or 'No Name'
+        return f'{name}'
 
 
 def function_create_beat(time_beat, task, name_task, **kwargs):

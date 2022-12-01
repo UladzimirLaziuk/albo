@@ -127,9 +127,9 @@ class CategoryProductAdmin(ModelAdmin):
 
 class ProjectProductAdmin(ModelAdmin):
     model = ProductModel
-    list_display = ("uniq_code", "describe_fields", "price_sample", "price_uniq", "full_url", 'image_tag')
+    list_display = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", 'image_tag')
     list_filter = ("uniq_code", "price_sample")
-    readonly_fields = ('describe_fields',)
+    # readonly_fields = ('describe_fields',)
 
     def get_queryset(self, request):
         my_query = super().get_queryset(request)
@@ -143,10 +143,10 @@ class ProjectProductAdmin(ModelAdmin):
         setattr(self, 'my_user_form', request.user)
         return super().changelist_view(request, extra_context)
 
-    def describe_fields(self, obj):
-        n = 15
-        obj_describe = obj.describe
-        return obj_describe[:n] + '...' if len(obj_describe) >= n else obj_describe
+    # def describe_fields(self, obj):
+    #     n = 15
+    #     obj_describe = obj.describe
+    #     return obj_describe[:n] + '...' if len(obj_describe) >= n else obj_describe
 
     def price_uniq(self, obj):
         discount = getattr(self.my_user_form, 'discount', 0)
@@ -191,6 +191,7 @@ manager_admin.register(CategoryProduct, CategoryProductAdmin)
 manager_admin.register(UsersCustomer, CustomerModelAdmin)
 manager_admin.disable_action('delete_selected')
 manager_admin.register(CategoryProductExclude)
+manager_admin.register(UniqCodeModel, UniqCodeModelAdmin)
 
 customer_admin.disable_action('delete_selected')
 customer_admin.register(ProductModel, ProjectProductAdmin)
