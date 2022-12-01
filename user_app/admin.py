@@ -113,7 +113,19 @@ class ProductModelAdmin(ModelAdmin):
 class ProductInline(TabularInline):
     model = ProductModel
     extra = 1
-    readonly_fields = 'image_tag',
+    fields = 'uniq_code', 'describe', 'price_sample', 'price_uniq', 'full_url', 'image_tag'
+    readonly_fields = 'image_tag', 'full_url', 'price_uniq'
+
+
+    def price_uniq(self, obj):
+        discount = getattr(self.my_user_form, 'discount', 0)
+        return round(obj.price_sample - (obj.price_sample * (discount / 100)), 2)
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        setattr(self, 'my_user_form', request.user)
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
+
+
 
 class CategoryProductAdmin(ModelAdmin):
     inlines = [ProductInline, ]
@@ -129,7 +141,7 @@ class CategoryProductAdmin(ModelAdmin):
 class ProjectProductAdmin(ModelAdmin):
     model = ProductModel
     list_display = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", 'image_tag')
-    list_filter = ("uniq_code", "price_sample")
+    list_filter = ("uniq_code", "price_sample", 'category_product__name_category')
     # readonly_fields = ('describe_fields',)
 
     def get_queryset(self, request):
