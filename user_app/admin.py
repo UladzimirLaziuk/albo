@@ -176,7 +176,7 @@ general_admin.register(ProductModel, ProjectProductAdmin)
 general_admin.register(CategoryProduct, CategoryProductAdmin)
 general_admin.register(UsersCustomer, CustomerModelAdmin)
 general_admin.register(UsersManager, ManagerModelAdmin)
-
+general_admin.register(UniqCodeModel, UniqCodeModelAdmin)
 default_admin.register(MyUser)
 default_admin.register(ProductModel, ProjectProductAdmin)
 default_admin.register(CategoryProduct, CategoryProductAdmin)
