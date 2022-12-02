@@ -108,7 +108,7 @@ class ProductModel(models.Model):
     describe = models.CharField(max_length=255, default='', verbose_name='Описание товара')
     url_describe = models.URLField(verbose_name="Ссылка на описание товара на сайте", default='', max_length=100)
     url_image_albo = models.URLField(verbose_name="Ссылка на фото товара на сайте", default='', max_length=100)
-    price_sample = models.FloatField(verbose_name='Цена обычная')
+    price_sample = models.FloatField(verbose_name='Цена обычная', default=0)
 
     class Meta:
         verbose_name = "Продукт"

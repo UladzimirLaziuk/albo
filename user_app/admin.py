@@ -1,4 +1,4 @@
-from django.contrib.admin import site, AdminSite, ModelAdmin, TabularInline, StackedInline
+from django.contrib.admin import site, AdminSite, ModelAdmin, TabularInline, StackedInline, SimpleListFilter
 from django.contrib.auth.models import User, Group
 from django.utils.safestring import mark_safe
 
@@ -119,7 +119,13 @@ class ProductInline(TabularInline):
 
     def price_uniq(self, obj):
         discount = getattr(self.my_user_form, 'discount', 0)
-        return round(obj.price_sample - (obj.price_sample * (discount / 100)), 2)
+        sample_price = obj.price_sample
+        if sample_price:
+            return round(obj.price_sample - (obj.price_sample * (discount / 100)), 2)
+        print(getattr(obj, 'id'), 'id')
+        print(getattr(obj, 'describe'), 'id')
+
+        return 0
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         setattr(self, 'my_user_form', request.user)
@@ -138,11 +144,33 @@ class CategoryProductAdmin(ModelAdmin):
         return my_query
 
 
+class MyCategoryListFilter(SimpleListFilter):
+    def queryset(self, request, queryset):
+        return queryset
+        # list_exclude = request.user.categoryproductexclude_set.values_list('exclude_category__name_category')
+        # return queryset.exclude(category_product__name_category__in=list_exclude)
+
+class SimpleHistoryShowDeletedFilter(SimpleListFilter):
+    title = "Entries"
+    parameter_name = "entries"
+
+    def lookups(self, request, model_admin):
+
+
+        return (
+            ("deleted_only", "Only Deleted"),
+        )
+    #
+    # def queryset(self, request, queryset):
+    #     if self.value():
+    #         return queryset.model.filter(category_product__name_category=self.value()).distinct()
+    #     return queryset
+
 class ProjectProductAdmin(ModelAdmin):
     model = ProductModel
     list_display = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", 'image_tag')
-    list_filter = ("uniq_code", "price_sample", 'category_product__name_category')
-    # readonly_fields = ('describe_fields',)
+    list_filter = ('category_product__name_category', "uniq_code", "price_sample", )
+    # list_filter = (SimpleHistoryShowDeletedFilter,)
 
     def get_queryset(self, request):
         my_query = super().get_queryset(request)
@@ -156,10 +184,8 @@ class ProjectProductAdmin(ModelAdmin):
         setattr(self, 'my_user_form', request.user)
         return super().changelist_view(request, extra_context)
 
-    # def describe_fields(self, obj):
-    #     n = 15
-    #     obj_describe = obj.describe
-    #     return obj_describe[:n] + '...' if len(obj_describe) >= n else obj_describe
+    def name_category_fields(self, obj):
+        return obj.category_product.name_category
 
     def price_uniq(self, obj):
         discount = getattr(self.my_user_form, 'discount', 0)
