@@ -120,11 +120,8 @@ class ProductInline(TabularInline):
     def price_uniq(self, obj):
         discount = getattr(self.my_user_form, 'discount', 0)
         sample_price = obj.price_sample
-        if sample_price:
-            return round(obj.price_sample - (obj.price_sample * (discount / 100)), 2)
-        print(getattr(obj, 'id'), 'id')
-        print(getattr(obj, 'describe'), 'id')
-
+        if obj.pk:
+            return round(sample_price - (sample_price * (discount / 100)), 2)
         return 0
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
