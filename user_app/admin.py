@@ -1,3 +1,6 @@
+import operator
+from functools import reduce
+
 from django.contrib.admin import site, AdminSite, ModelAdmin, TabularInline, StackedInline, SimpleListFilter
 from django.contrib.auth.models import User, Group
 from django.utils.html import format_html
@@ -123,14 +126,15 @@ class ProductInline(TabularInline):
             list_exclude = request.user.categoryproductexclude_set.values_list('exclude_category__name_category')
             my_query = AlboProductModel.objects.exclude(category_product__name_category__in=list_exclude)
 
-        list_category = my_query.filter(category_product__name_category__isnull=False).values_list(
-            'category_product__name_category', flat=True).distinct()
-        list_query = []
-        for name_category in list_category:
-            list_query.append(my_query.filter(category_product__name_category=name_category).order_by('size_field'))
-        query_sort = self.model._default_manager.none().union(*list_query)
+        # list_category = my_query.filter(category_product__name_category__isnull=False).values_list(
+        #     'category_product__name_category', flat=True).distinct()
+        # list_query = []
+        # for name_category in list_category:
+        #     list_query.append(my_query.filter(category_product__name_category=name_category).order_by('size_field'))
+        # query_sort = self.model._default_manager.none().union(*list_query)
 
-        return query_sort
+        return my_query.order_by('size_field')
+
     def price_uniq(self, obj):
         discount = getattr(self.my_user_form, 'discount', 0)
         sample_price = obj.price_sample
@@ -180,6 +184,7 @@ class SimpleHistoryShowDeletedFilter(SimpleListFilter):
         return (
             ("deleted_only", "Only Deleted"),
         )
+
 
 class ProjectProductAdmin(ModelAdmin):
     model = ProductModel
@@ -243,8 +248,7 @@ class AlboProductAdmin(ModelAdmin):
         list_query = []
         for name_category in list_category:
             list_query.append(my_query.filter(category_product__name_category=name_category).order_by('size_field'))
-        query_sort = self.model._default_manager.none().union(*list_query)
-
+        query_sort = reduce(operator.or_, list_query)
         return query_sort
 
     def changelist_view(self, request, extra_context=None):
