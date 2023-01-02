@@ -16,6 +16,8 @@ django-phonenumber-field==7.0.0
 django-redis==5.2.0
 django-timezone-field==5.0
 et-xmlfile==1.1.0
+flower==1.2.0
+humanize==4.4.0
 kombu==5.2.4
 msgpack==1.0.4
 numpy==1.23.5
@@ -23,6 +25,7 @@ openpyxl==3.0.10
 packaging==21.3
 pandas==1.5.1
 phonenumbers==8.13.0
+prometheus-client==0.15.0
 prompt-toolkit==3.0.33
 pycparser==2.21
 pyparsing==3.0.9
@@ -33,6 +36,7 @@ pytz==2022.6
 redis==4.3.5
 six==1.16.0
 sqlparse==0.4.3
+tornado==6.2
 tzdata==2022.6
 vine==5.0.0
 wcwidth==0.2.5

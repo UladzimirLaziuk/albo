@@ -1,11 +1,12 @@
 from django.contrib.admin import site, AdminSite, ModelAdmin, TabularInline, StackedInline, SimpleListFilter
 from django.contrib.auth.models import User, Group
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-
+from django.contrib.admin.models import LogEntry
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.hashers import make_password
 from user_app.models import MyUser, ProductModel, CategoryProduct, UniqCodeModel, OneCCodeModel, PeriodicTimeModel, \
-    CategoryProductExclude, UserActivityTrack
+    CategoryProductExclude, UserActivityTrack, AlboProductModel, OneCCodeAlboModel
 
 default_admin = site
 
@@ -17,8 +18,8 @@ class CustomAdminBase(AdminSite):
 
     def has_permission(self, request):
         return super().has_permission(request) and \
-               hasattr(request.user, self.model_name_permission) and \
-               getattr(request.user, self.model_name_permission) == self.permissions
+            hasattr(request.user, self.model_name_permission) and \
+            getattr(request.user, self.model_name_permission) == self.permissions
 
 
 class GeneralAdminPanel(CustomAdminBase):
@@ -111,12 +112,25 @@ class ProductModelAdmin(ModelAdmin):
 
 
 class ProductInline(TabularInline):
-    model = ProductModel
+    model = AlboProductModel
     extra = 1
-    fields = 'uniq_code', 'describe', 'price_sample', 'price_uniq', 'full_url', 'image_tag'
-    readonly_fields = 'image_tag', 'full_url', 'price_uniq'
+    fields = 'uniq_code', 'describe', 'price_sample', 'price_uniq', 'full_url', 'url_describe', 'url_image_albo', 'image_tag', 'size_field', 'quantity'
+    readonly_fields = 'full_url', 'price_uniq', 'image_tag', 'quantity'
 
+    def get_queryset(self, request):
+        my_query = super().get_queryset(request)
+        if request.user.categoryproductexclude_set.exists():
+            list_exclude = request.user.categoryproductexclude_set.values_list('exclude_category__name_category')
+            my_query = AlboProductModel.objects.exclude(category_product__name_category__in=list_exclude)
 
+        list_category = my_query.filter(category_product__name_category__isnull=False).values_list(
+            'category_product__name_category', flat=True).distinct()
+        list_query = []
+        for name_category in list_category:
+            list_query.append(my_query.filter(category_product__name_category=name_category).order_by('size_field'))
+        query_sort = self.model._default_manager.none().union(*list_query)
+
+        return query_sort
     def price_uniq(self, obj):
         discount = getattr(self.my_user_form, 'discount', 0)
         sample_price = obj.price_sample
@@ -124,10 +138,20 @@ class ProductInline(TabularInline):
             return round(sample_price - (sample_price * (discount / 100)), 2)
         return 0
 
+    def url_describe(self, obj):
+        print('-' * 300)
+        if getattr(obj, 'url_describe'):
+            return format_html("<a href='%s'>Ссылка на товар %s на сайте </a>" %
+                               (obj.url_describe, str(obj.describe)[:20]))
+
+    def image_tag(self, obj):
+        if obj.url_image_albo:
+            return mark_safe('<img src="%s" style="width:180px;height:180px;" />' % (obj.url_image_albo))
+        return ''  # mark_safe('<img src="" alt="%s" style="width:60px; height:60px;" />' % "noimagefound")
+
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         setattr(self, 'my_user_form', request.user)
         return super().formfield_for_choice_field(db_field, request, **kwargs)
-
 
 
 class CategoryProductAdmin(ModelAdmin):
@@ -147,26 +171,21 @@ class MyCategoryListFilter(SimpleListFilter):
         # list_exclude = request.user.categoryproductexclude_set.values_list('exclude_category__name_category')
         # return queryset.exclude(category_product__name_category__in=list_exclude)
 
+
 class SimpleHistoryShowDeletedFilter(SimpleListFilter):
     title = "Entries"
     parameter_name = "entries"
 
     def lookups(self, request, model_admin):
-
-
         return (
             ("deleted_only", "Only Deleted"),
         )
-    #
-    # def queryset(self, request, queryset):
-    #     if self.value():
-    #         return queryset.model.filter(category_product__name_category=self.value()).distinct()
-    #     return queryset
 
 class ProjectProductAdmin(ModelAdmin):
     model = ProductModel
     list_display = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", 'image_tag')
-    list_filter = ('category_product__name_category', "uniq_code", "price_sample", )
+    list_filter = ('category_product__name_category', "uniq_code", "price_sample",)
+
     # list_filter = (SimpleHistoryShowDeletedFilter,)
 
     def get_queryset(self, request):
@@ -191,10 +210,62 @@ class ProjectProductAdmin(ModelAdmin):
     def discount(self, obj):
         return obj.my_user_form.discount
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 class OneCCodeModelInlines(StackedInline):
     model = OneCCodeModel
     extra = 1
+
+
+class OneCCodeAlboModelInlines(StackedInline):
+    model = OneCCodeAlboModel
+    extra = 1
+
+
+class AlboProductAdmin(ModelAdmin):
+    inlines = [OneCCodeAlboModelInlines, ]
+    model = AlboProductModel
+    list_display = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", 'image_tag')
+    list_filter = ('category_product__name_category', "uniq_code", "price_sample",)
+
+    # list_filter = (SimpleHistoryShowDeletedFilter,)
+
+    def get_queryset(self, request):
+        my_query = super().get_queryset(request)
+        if request.user.categoryproductexclude_set.exists():
+            list_exclude = request.user.categoryproductexclude_set.values_list('exclude_category__name_category')
+            my_query = AlboProductModel.objects.exclude(category_product__name_category__in=list_exclude)
+
+        list_category = my_query.filter(category_product__name_category__isnull=False).values_list(
+            'category_product__name_category', flat=True).distinct()
+        list_query = []
+        for name_category in list_category:
+            list_query.append(my_query.filter(category_product__name_category=name_category).order_by('size_field'))
+        query_sort = self.model._default_manager.none().union(*list_query)
+
+        return query_sort
+
+    def changelist_view(self, request, extra_context=None):
+        # add user in my model admin
+        setattr(self, 'my_user_form', request.user)
+        return super().changelist_view(request, extra_context)
+
+    def name_category_fields(self, obj):
+        return obj.category_product.name_category
+
+    def price_uniq(self, obj):
+        discount = getattr(self.my_user_form, 'discount', 0)
+        return round(obj.price_sample - (obj.price_sample * (discount / 100)), 2)
+
+    def discount(self, obj):
+        return obj.my_user_form.discount
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # if db_field.name == "school":
+        #     kwargs["queryset"] = School.objects.order_by('name')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class UniqCodeModelAdmin(ModelAdmin):
@@ -206,14 +277,20 @@ class UniqCodeModelAdmin(ModelAdmin):
         return ','.join(data)
 
 
-default_admin.register(UsersGeneralManager, GeneralModelAdmin)
+class CategoryProductExcludeAdmin(ModelAdmin):
+    model = CategoryProductExclude
+    list_display = ("exclude_category", 'exclude_user')
+    filter_dict = {'resolution_value': 'is_admin_customer'}
 
-general_admin.register(ProductModel, ProjectProductAdmin)
-general_admin.register(CategoryProduct, CategoryProductAdmin)
-general_admin.register(UsersCustomer, CustomerModelAdmin)
-general_admin.register(UsersManager, ManagerModelAdmin)
-general_admin.register(UniqCodeModel, UniqCodeModelAdmin)
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "exclude_user":
+            kwargs["queryset"] = MyUser.objects.filter(**self.filter_dict)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+default_admin.register(UsersGeneralManager, GeneralModelAdmin)
 default_admin.register(MyUser)
+default_admin.register(AlboProductModel, AlboProductAdmin)
 default_admin.register(ProductModel, ProjectProductAdmin)
 default_admin.register(CategoryProduct, CategoryProductAdmin)
 default_admin.register(UsersManager, ManagerModelAdmin)
@@ -222,18 +299,26 @@ default_admin.register(UniqCodeModel, UniqCodeModelAdmin)
 default_admin.register(PeriodicTimeModel)
 default_admin.register(CategoryProductExclude)
 
+general_admin.register(ProductModel, ProjectProductAdmin)
+general_admin.register(CategoryProduct, CategoryProductAdmin)
+general_admin.register(UsersCustomer, CustomerModelAdmin)
+general_admin.register(UsersManager, ManagerModelAdmin)
+general_admin.register(UniqCodeModel, UniqCodeModelAdmin)
+general_admin.register(CategoryProductExclude, CategoryProductExcludeAdmin)
+general_admin.register(AlboProductModel, AlboProductAdmin)
+
 manager_admin.register(ProductModel, ProjectProductAdmin)
 manager_admin.register(CategoryProduct, CategoryProductAdmin)
 manager_admin.register(UsersCustomer, CustomerModelAdmin)
 manager_admin.disable_action('delete_selected')
-manager_admin.register(CategoryProductExclude)
+manager_admin.register(CategoryProductExclude, CategoryProductExcludeAdmin)
 manager_admin.register(UniqCodeModel, UniqCodeModelAdmin)
+manager_admin.register(AlboProductModel, AlboProductAdmin)
 
 customer_admin.disable_action('delete_selected')
 customer_admin.register(ProductModel, ProjectProductAdmin)
 customer_admin.register(CategoryProduct, CategoryProductAdmin)
-
-from django.contrib.admin.models import LogEntry
+customer_admin.register(AlboProductModel, AlboProductAdmin)
 
 
 class LogEntryAdmin(ModelAdmin):
