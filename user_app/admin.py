@@ -233,7 +233,7 @@ class AlboProductAdmin(ModelAdmin):
     inlines = [OneCCodeAlboModelInlines, ]
     model = AlboProductModel
     list_display = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", 'image_tag')
-    list_filter = ('category_product__name_category', "uniq_code", "price_sample",)
+    list_filter = ('category_product__name_category', "size_field")
 
     # list_filter = (SimpleHistoryShowDeletedFilter,)
 
