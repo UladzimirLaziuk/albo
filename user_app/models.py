@@ -106,10 +106,10 @@ class AlboProductModel(models.Model):
     category_product = models.ForeignKey(CategoryProduct, on_delete=models.CASCADE, blank=True, null=True)
     uniq_code = models.CharField(max_length=255, default='', verbose_name='Код товара')
     describe = models.CharField(max_length=255, default='', verbose_name='Описание товара')
-    url_describe = models.URLField(verbose_name="Ссылка на описание товара на сайте", max_length=100, blank=True,
+    url_describe = models.URLField(verbose_name="Ссылка на описание товара на сайте", max_length=255, blank=True,
                                    null=True)
     url_image_albo = models.URLField(verbose_name="Ссылка на фото товара на сайте", blank=True, null=True,
-                                     max_length=100)
+                                     max_length=255)
     price_sample = models.FloatField(verbose_name='Цена обычная', default=0)
     quantity = models.IntegerField(null=True, default=0)
     size_field = models.FloatField(verbose_name='Размер', default=0)
@@ -128,6 +128,8 @@ class AlboProductModel(models.Model):
             return format_html("<a href='%s'>Ссылка на товар %s на сайте </a>" %
                                (self.url_describe, str(self.describe)[:20]))
         return ''
+    def __str__(self):
+        return '%s' % self.describe
 
 
 class OneCCodeAlboModel(models.Model):
