@@ -8,8 +8,8 @@ import pandas as pd
 from celery.utils.log import get_task_logger
 
 from albo.celery import app
-from user_app.models import OneCCodeModel, PeriodicTimeModel
 
+from user_app import models
 logger_celery = get_task_logger(__name__)
 
 
@@ -56,7 +56,7 @@ def read_csv(file):
     my_df[my_df.columns[1]] = my_df[my_df.columns[1]].apply(function_with_try_int)
     dict_code_1C = my_df.set_index(my_df.columns[0])[my_df.columns[1]].to_dict()
 
-    tuple_code_for_map = OneCCodeModel.objects.filter(uniq_code_one_c__in=dict_code_1C.keys()).values_list(
+    tuple_code_for_map = models.OneCCodeModel.objects.filter(uniq_code_one_c__in=dict_code_1C.keys()).values_list(
         'uniq_code_one_c', 'map_code__uniq_code')
     my_dict = defaultdict(int)
 
@@ -67,7 +67,17 @@ def read_csv(file):
     return my_dict
 
 
+def write_result_in_base(data):
+    list_model = models.AlboProductModel.objects.filter(uniq_code__in=data.keys())
+    
+    for obj_model in list_model:
+        obj_model.quantity = data.get(obj_model.uniq_code)
+    if list_model.exists():
+        models.AlboProductModel.objects.bulk_update(list_model, ['quantity'])
+
+
 def dict_writer(data, filename):
+    write_result_in_base(data)
     with open(filename, "w", encoding="utf-8") as f_obj:
         writer = csv.writer(f_obj, delimiter=';')
 
@@ -102,7 +112,7 @@ def export_file_ftp(file_csv: str, export_ftp_data, _type: str = None, filename_
     file.close()
     ftp.quit()
 
-    PeriodicTimeModel.objects.update(**{'last_time': dt_now})
+    models.PeriodicTimeModel.objects.update(**{'last_time': dt_now})
 
 
 @app.task(bind=True)
@@ -111,9 +121,5 @@ def task_export(*args, import_ftp_address: str = '', export_ftp_address: str = '
     file_last = get_file_ftp(import_ftp_address)
     dict_to_write = read_csv(file_last)
     dict_writer(dict_to_write, filename_for_export)
-    export_file_ftp(import_ftp_address, export_ftp_address, filename_for_export)
+    # export_file_ftp(import_ftp_address, export_ftp_address, filename_for_export)
 
-
-@app.task
-def import_contacts(*args, **kwargs):
-    print('import contact')

@@ -118,15 +118,14 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'user_app.MyUser'
 
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://localhost:6379/1")
-BROKER_URL = 'redis://127.0.0.1:6379'
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://127.0.0.1:6379/0")
+# BROKER_URL = 'redis://localhost:6379/0'
 CELERY_IMPORTS = ("albo.tasks",)
 
 IMPORT_FTP_ADDRESS = os.environ.get('IMPORT_FTP_ADDRESS')

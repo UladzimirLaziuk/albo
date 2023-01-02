@@ -102,24 +102,64 @@ class CategoryProductExclude(models.Model):
     exclude_user = models.ForeignKey(MyUser, on_delete=models.CASCADE, blank=True, null=True)
 
 
+class AlboProductModel(models.Model):
+    category_product = models.ForeignKey(CategoryProduct, on_delete=models.CASCADE, blank=True, null=True)
+    uniq_code = models.CharField(max_length=255, default='', verbose_name='Код товара')
+    describe = models.CharField(max_length=255, default='', verbose_name='Описание товара')
+    url_describe = models.URLField(verbose_name="Ссылка на описание товара на сайте", max_length=100, blank=True,
+                                   null=True)
+    url_image_albo = models.URLField(verbose_name="Ссылка на фото товара на сайте", blank=True, null=True,
+                                     max_length=100)
+    price_sample = models.FloatField(verbose_name='Цена обычная', default=0)
+    quantity = models.IntegerField(null=True, default=0)
+    size_field = models.FloatField(verbose_name='Размер', default=0)
+
+    class Meta:
+        verbose_name = "Продукт Albo"
+        verbose_name_plural = "Продукты Albo"
+
+    def image_tag(self):
+        if self.url_image_albo:
+            return mark_safe('<img src="%s" style="width:180px;height:180px;" />' % (self.url_image_albo))
+        return mark_safe('<img src="" alt="%s" style="width:60px; height:60px;" />' % "noimagefound")
+
+    def full_url(self):
+        if self.url_describe:
+            return format_html("<a href='%s'>Ссылка на товар %s на сайте </a>" %
+                               (self.url_describe, str(self.describe)[:20]))
+        return ''
+
+
+class OneCCodeAlboModel(models.Model):
+    map_code = models.ForeignKey(AlboProductModel, on_delete=models.CASCADE)
+    uniq_code_one_c = models.CharField(max_length=120, verbose_name='Code 1C')
+
+
 class ProductModel(models.Model):
     category_product = models.ForeignKey(CategoryProduct, on_delete=models.CASCADE, blank=True, null=True)
-    uniq_code = models.CharField(max_length=20, default='', verbose_name='Код товара')
+    uniq_code = models.CharField(max_length=255, default='', verbose_name='Код товара')
     describe = models.CharField(max_length=255, default='', verbose_name='Описание товара')
     url_describe = models.URLField(verbose_name="Ссылка на описание товара на сайте", default='', max_length=100)
-    url_describe_two = models.URLField(verbose_name="Ссылка на фото товара на сайте", default='', max_length=100)
-    price_sample = models.FloatField(verbose_name='Цена обычная')
+    url_image_albo = models.URLField(verbose_name="Ссылка на фото товара на сайте", default='', max_length=100)
+    price_sample = models.FloatField(verbose_name='Цена обычная', default=0)
 
     class Meta:
         verbose_name = "Продукт"
         verbose_name_plural = "Продукты"
 
     def image_tag(self):
-        return mark_safe('<img src="%s" width="150" height="100" />' % (self.url_describe_two))
+        if self.url_image_albo:
+            return mark_safe('<img src="%s" style="width:180px;height:180px;" />' % (self.url_image_albo))
+        return mark_safe('<img src="" alt="%s" style="width:60px; height:60px;" />' % "noimagefound")
 
     def full_url(self):
-        return format_html("<a href='%s'>Ссылка на товар %s на сайте </a>" %
-                           (self.url_describe, str(self.describe)[:20]))
+        if self.url_describe:
+            return format_html("<a href='%s'>Ссылка на товар %s на сайте </a>" %
+                               (self.url_describe, str(self.describe)[:20]))
+        return ''
+
+    def __str__(self):
+        return '%s' % self.describe
 
 
 class UniqCodeModel(models.Model):
@@ -157,7 +197,8 @@ class UserActivityTrack(models.Model):
     user_agent = models.CharField(max_length=255)
 
     def __str__(self):
-        return _(f'{self.user.get_full_name}')
+        name = self.user.get_full_name or 'No Name'
+        return f'{name}'
 
 
 def function_create_beat(time_beat, task, name_task, **kwargs):
@@ -173,7 +214,6 @@ def function_create_beat(time_beat, task, name_task, **kwargs):
 @receiver(post_save, sender=PeriodicTimeModel)
 def create_track_signal(sender, instance, **kwargs):
     beat_time = str(instance.get_val_periodic_minute)
-    print(beat_time)
     IMPORT_FTP_ADDRESS = albo.settings.IMPORT_FTP_ADDRESS
     EXPORT_FTP_ADDRESS = albo.settings.EXPORT_FTP_ADDRESS
     FILE_NAME_FOR_EXPORT = albo.settings.FILE_NAME_FOR_EXPORT
