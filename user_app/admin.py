@@ -346,6 +346,20 @@ class LogEntryAdmin(ModelAdmin):
         'action_flag',
     ]
 
+default_admin.site_header = 'Albo Panel'
+manager_admin.site_header = 'Albo Panel'
+general_admin.site_header = 'Albo Panel'
+customer_admin.site_header = 'Albo Panel'
+
+default_admin.site_title = "Albo Admin Portal"
+general_admin.site_title = "Albo Admin Portal"
+manager_admin.site_title = "Albo Admin Portal"
+customer_admin.site_title = "Albo Admin Portal"
+
+default_admin.index_title = "Welcome to Albo Portal"
+general_admin.index_title = "Welcome to Albo Portal"
+manager_admin.index_title = "Welcome to Albo Portal"
+customer_admin.index_title = "Welcome to Albo Portal"
 
 default_admin.register(LogEntry, LogEntryAdmin)
 general_admin.register(UserActivityTrack)
