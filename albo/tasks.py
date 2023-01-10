@@ -87,11 +87,12 @@ def write_result_in_base(data):
 
 def files_test(filename):
     source = filename
-    name_files = get_filename(source, _type='csv')
-    destination = f"./Files/{name_files}"
+    filename, dt_now = get_filename(source, _type='.csv')
+    destination = f"./Files/{filename}"
     try:
         shutil.copy(source, destination)
         print("File copied successfully.")
+        models.PeriodicTimeModel.objects.update(**{'last_time': dt_now})
 
     # If source and destination are same
     except shutil.SameFileError:
