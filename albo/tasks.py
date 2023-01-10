@@ -6,10 +6,12 @@ from datetime import datetime
 from django.utils import timezone
 import pandas as pd
 from celery.utils.log import get_task_logger
+import shutil
 
 from albo.celery import app
 
 from user_app import models
+
 logger_celery = get_task_logger(__name__)
 
 
@@ -23,6 +25,13 @@ def function_with_try_int(x):
 
 def transform_filename_to_dt(i):
     return datetime.strptime(i.split("_")[-1].split(".")[0], '%Y-%m-%dT%H:%M:%S')
+
+
+def get_filename(filename, _type):
+    pattern_date = "%Y-%m-%dT%H:%M:%S"
+    dt_now = timezone.now()
+    name_file = filename.split("_")[0]
+    return f'{name_file}_{dt_now:{pattern_date}}' + _type, dt_now
 
 
 def get_last_filename(ftp):
@@ -69,11 +78,24 @@ def read_csv(file):
 
 def write_result_in_base(data):
     list_model = models.AlboProductModel.objects.filter(uniq_code__in=data.keys())
-    
+
     for obj_model in list_model:
         obj_model.quantity = data.get(obj_model.uniq_code)
     if list_model.exists():
         models.AlboProductModel.objects.bulk_update(list_model, ['quantity'])
+
+
+def files_test(filename):
+    source = filename
+    name_files = get_filename(source, _type='csv')
+    destination = f"./Files/{name_files}"
+    try:
+        shutil.copy(source, destination)
+        print("File copied successfully.")
+
+    # If source and destination are same
+    except shutil.SameFileError:
+        print("Source and destination represents the same file.")
 
 
 def dict_writer(data, filename):
@@ -83,13 +105,7 @@ def dict_writer(data, filename):
 
         for key, value in data.items():
             writer.writerow([key, value])
-
-
-def get_filename(filename, _type):
-    pattern_date = "%Y-%m-%dT%H:%M:%S"
-    dt_now = timezone.now()
-    name_file = filename.split("_")[0]
-    return f'{name_file}_{dt_now:{pattern_date}}' + _type, dt_now
+    files_test(filename)
 
 
 def export_file_ftp(file_csv: str, export_ftp_data, _type: str = None, filename_for_export=None):
@@ -122,4 +138,3 @@ def task_export(*args, import_ftp_address: str = '', export_ftp_address: str = '
     dict_to_write = read_csv(file_last)
     dict_writer(dict_to_write, filename_for_export)
     # export_file_ftp(import_ftp_address, export_ftp_address, filename_for_export)
-

@@ -204,7 +204,7 @@ class UserActivityTrack(models.Model):
 
 
 def function_create_beat(time_beat, task, name_task, **kwargs):
-    schedule, _ = CrontabSchedule.objects.update_or_create(minute=f'*/{time_beat}', hour="*", day_of_week="*")
+    schedule, _ = CrontabSchedule.objects.update_or_create(minute=f'*/{time_beat}', hour="8-18", day_of_week="*")
     periodic_task, created = PeriodicTask.objects.get_or_create(
         crontab=schedule,
         name=name_task,
