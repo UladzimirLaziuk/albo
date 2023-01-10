@@ -87,8 +87,8 @@ def write_result_in_base(data):
 
 def files_test(filename):
     source = filename
-    filename, dt_now = get_filename(source, _type='.csv')
-    destination = f"./Files/{filename}"
+    file_name, dt_now = get_filename(source, _type='.csv')
+    destination = f"./Files/{file_name}"
     try:
         shutil.copy(source, destination)
         print("File copied successfully.")
