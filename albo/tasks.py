@@ -65,7 +65,7 @@ def read_csv(file):
     my_df[my_df.columns[1]] = my_df[my_df.columns[1]].apply(function_with_try_int)
     dict_code_1C = my_df.set_index(my_df.columns[0])[my_df.columns[1]].to_dict()
 
-    tuple_code_for_map = models.OneCCodeModel.objects.filter(uniq_code_one_c__in=dict_code_1C.keys()).values_list(
+    tuple_code_for_map = models.OneCCodeAlboModel.objects.filter(uniq_code_one_c__in=dict_code_1C.keys()).values_list(
         'uniq_code_one_c', 'map_code__uniq_code')
     my_dict = defaultdict(int)
 
