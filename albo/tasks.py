@@ -147,7 +147,7 @@ def export_file_ftp(export_ftp_data, _type: str = None, filename_for_export=None
 
 @app.task(bind=True)
 def task_export(*args, import_ftp_address: str = '', export_ftp_address: str = '', filename_for_export: str = '',
-                _type='csv', **kwargs):
+                _type='.csv', **kwargs):
     file_last = get_file_ftp(import_ftp_address)
     dict_to_write = read_csv(file_last)
     dict_writer(dict_to_write, filename_for_export)
