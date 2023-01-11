@@ -99,6 +99,19 @@ def files_test(filename):
         print("Source and destination represents the same file.")
 
 
+def files_test_export(filename):
+    source = filename
+    file_name, dt_now = get_filename(source, _type='.csv')
+    destination = f"./Files/{file_name}"
+    try:
+        shutil.copy(source, destination)
+        print("File copied successfully.")
+
+    # If source and destination are same
+    except shutil.SameFileError:
+        print("Source and destination represents the same file.")
+
+
 def dict_writer(data, filename):
     write_result_in_base(data)
     with open(filename, "w", encoding="utf-8") as f_obj:
@@ -106,7 +119,6 @@ def dict_writer(data, filename):
 
         for key, value in data.items():
             writer.writerow([key, value])
-    files_test(filename)
 
 
 def export_file_ftp(file_csv: str, export_ftp_data, _type: str = None, filename_for_export=None):
@@ -130,6 +142,7 @@ def export_file_ftp(file_csv: str, export_ftp_data, _type: str = None, filename_
     ftp.quit()
 
     models.PeriodicTimeModel.objects.update(**{'last_time': dt_now})
+    files_test_export(filename_for_export)
 
 
 @app.task(bind=True)
