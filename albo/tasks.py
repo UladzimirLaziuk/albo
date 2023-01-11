@@ -152,12 +152,12 @@ def export_file_ftp(export_ftp_data, _type: str = None, filename_for_export=None
     filename, dt_now = get_filename(name_file, _type)  # file to send
 
     logger_celery.debug('-- filename-%s' % filename)
-    # ftpResponseMessage = ftp.storbinary(f'STOR {filename}', file)  # send the file
+    ftpResponseMessage = ftp.storbinary(f'STOR {filename}', file)  # send the file
     logger_celery.debug('-- STOR filename-%s' % f'STOR {filename}')
 
     ftp_list_files = ftp.nlst()
     logger_celery.debug(f'{len(ftp_list_files)}')
-    # logger_celery.debug(f'ftpResponseMessage - {ftpResponseMessage}')
+    logger_celery.debug(f'ftpResponseMessage - {ftpResponseMessage}')
     logger_celery.debug(f'{filename} in nlst ------ {filename in ftp_list_files}')
     file.close()
     ftp.quit()
@@ -173,5 +173,5 @@ def task_export(*args, import_ftp_address: str = '', export_ftp_address: str = '
     dict_to_write = read_csv(file_last)
     dict_writer(dict_to_write, filename_for_export)
     export_file_ftp(filename_for_export=filename_for_export, export_ftp_data=export_ftp_address, _type=_type, name_file=file_last)
-    # ftp_double_test(import_ftp_address, filename_for_export)
+
 
