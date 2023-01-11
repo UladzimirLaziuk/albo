@@ -99,9 +99,9 @@ def files_test(filename):
         print("Source and destination represents the same file.")
 
 
-def files_test_export(filename):
-    source = filename
-    file_name, dt_now = get_filename(source, _type='.csv')
+def files_test_export(filename_for_export, file_name):
+    source = filename_for_export
+    file_name, dt_now = get_filename(file_name, _type='.csv')
     destination = f"./Files/{file_name}"
     try:
         shutil.copy(source, destination)
@@ -163,7 +163,7 @@ def export_file_ftp(export_ftp_data, _type: str = None, filename_for_export=None
     ftp.quit()
 
     models.PeriodicTimeModel.objects.update(**{'last_time': dt_now})
-    files_test_export(filename_for_export)
+    files_test_export(filename_for_export, name_file)
 
 
 @app.task(bind=True)
