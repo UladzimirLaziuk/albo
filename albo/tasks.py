@@ -102,7 +102,7 @@ def files_test(filename):
 def files_test_export(filename_for_export, name_file):
     source = filename_for_export
     file_name, dt_now = get_filename(name_file, _type='.csv')
-    destination = f"./Files/{name_file}"
+    destination = f"./Files/{file_name}"
     try:
         shutil.copy(source, destination)
         print("File copied successfully.")
