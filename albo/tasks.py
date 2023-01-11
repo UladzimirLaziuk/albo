@@ -121,14 +121,12 @@ def dict_writer(data, filename):
             writer.writerow([key, value])
 
 
-def export_file_ftp(file_csv: str, export_ftp_data, _type: str = None, filename_for_export=None):
-    logger_celery.debug('get func import_file-%s' % file_csv)
-
+def ftp_double_test(export_ftp_data, _type: str = None, filename_for_export=None):
     export_ftp_data_list = export_ftp_data.split(':')
     ftp = ftplib.FTP(*export_ftp_data_list)
 
     file = open(filename_for_export, 'rb')
-    filename, dt_now = get_filename(file_csv, _type)  # file to send
+    filename, dt_now = get_filename(filename_for_export, _type)  # file to send
 
     logger_celery.debug('-- filename-%s' % filename)
     ftpResponseMessage = ftp.storbinary(f'STOR {filename}', file)  # send the file
@@ -137,6 +135,29 @@ def export_file_ftp(file_csv: str, export_ftp_data, _type: str = None, filename_
     ftp_list_files = ftp.nlst()
     logger_celery.debug(f'{len(ftp_list_files)}')
     logger_celery.debug(f'ftpResponseMessage - {ftpResponseMessage}')
+    logger_celery.debug(f'{filename} in nlst ------ {filename in ftp_list_files}')
+    file.close()
+    ftp.quit()
+
+
+
+
+def export_file_ftp(export_ftp_data, _type: str = None, filename_for_export=None):
+    logger_celery.debug('get func import_file-%s' % filename_for_export)
+
+    export_ftp_data_list = export_ftp_data.split(':')
+    ftp = ftplib.FTP(*export_ftp_data_list)
+
+    file = open(filename_for_export, 'rb')
+    filename, dt_now = get_filename(filename_for_export, _type)  # file to send
+
+    logger_celery.debug('-- filename-%s' % filename)
+    # ftpResponseMessage = ftp.storbinary(f'STOR {filename}', file)  # send the file
+    logger_celery.debug('-- STOR filename-%s' % f'STOR {filename}')
+
+    ftp_list_files = ftp.nlst()
+    logger_celery.debug(f'{len(ftp_list_files)}')
+    # logger_celery.debug(f'ftpResponseMessage - {ftpResponseMessage}')
     logger_celery.debug(f'{filename} in nlst ------ {filename in ftp_list_files}')
     file.close()
     ftp.quit()
@@ -151,4 +172,6 @@ def task_export(*args, import_ftp_address: str = '', export_ftp_address: str = '
     file_last = get_file_ftp(import_ftp_address)
     dict_to_write = read_csv(file_last)
     dict_writer(dict_to_write, filename_for_export)
-    export_file_ftp(import_ftp_address, export_ftp_address, filename_for_export)
+    export_file_ftp(filename_for_export=filename_for_export, export_ftp_data=export_ftp_address, _type=_type)
+    # ftp_double_test(import_ftp_address, filename_for_export)
+
