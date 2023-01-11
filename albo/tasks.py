@@ -151,4 +151,4 @@ def task_export(*args, import_ftp_address: str = '', export_ftp_address: str = '
     file_last = get_file_ftp(import_ftp_address)
     dict_to_write = read_csv(file_last)
     dict_writer(dict_to_write, filename_for_export)
-    # export_file_ftp(import_ftp_address, export_ftp_address, filename_for_export)
+    export_file_ftp(import_ftp_address, export_ftp_address, filename_for_export)
