@@ -29,7 +29,7 @@ def transform_filename_to_dt(i):
 
 def get_filename(filename, _type):
     pattern_date = "%Y-%m-%dT%H:%M:%S"
-    dt_now = timezone.now()
+    dt_now = timezone.localtime()
     name_file = filename.split("_")[0]
     return f'{name_file}_{dt_now:{pattern_date}}' + _type, dt_now
 
