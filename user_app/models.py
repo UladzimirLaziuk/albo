@@ -14,12 +14,13 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.utils.html import format_html
 import albo.settings
+from django.db.utils import IntegrityError
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, full_name=None, profile_picture=None, password=None, is_admin=False, is_staff=False,
-                    is_active=True):
+    def create_user(self, email, full_name=None, profile_picture=None, password=None, is_admin=True, is_staff=True,
+                    is_active=True, is_superuser=False):
         if not email:
             raise ValueError("User must have an email")
         if not password:
@@ -34,6 +35,7 @@ class UserManager(BaseUserManager):
         user.set_password(password)  # change password to hash
         user.profile_picture = profile_picture
         user.is_admin = is_admin
+        user.is_superuser = is_superuser
         user.is_staff = is_staff
         user.is_active = is_active
         user.save(using=self._db)
@@ -67,9 +69,10 @@ class MyUser(AbstractUser):
     user_position = models.CharField(max_length=50, default='')
     resolution_value = models.CharField(max_length=50, default='')
     discount = models.FloatField(verbose_name='Скидка клиента в %', default=0)
+    manager_user = models.ForeignKey('MyUser', on_delete=models.CASCADE, blank=True, null=True)
     username = None
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'resolution_value']
     objects = UserManager()
 
     class Meta:
@@ -122,7 +125,7 @@ class AlboProductModel(models.Model):
         if self.url_image_albo:
             return mark_safe('<img src="%s" style="width:180px;height:180px;" />' % (self.url_image_albo))
         return mark_safe('<img src="" alt="%s" style="width:60px; height:60px;" />' % "noimagefound")
-
+    @property
     def full_url(self):
         if self.url_describe:
             return format_html("<a href='%s'>Ссылка на товар %s на сайте </a>" %
@@ -239,12 +242,15 @@ def post_login(sender, user, request, **kwargs):
     messages.add_message(request, messages.INFO, user.get_full_name + ' Hello!')
 
     # locationInfo = get_location_data__from_ip(ip)
-    UserActivityTrack.objects.create(
+    try:
+        UserActivityTrack.objects.create(
         user=user,
         session_key=request.session.session_key,
         ip=request.META.get('REMOTE_ADDR'),
         user_agent=request.META.get('HTTP_USER_AGENT'),
     )
+    except IntegrityError:
+        pass
 
 
 @receiver(user_logged_out)

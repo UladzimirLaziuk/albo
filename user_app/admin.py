@@ -27,19 +27,21 @@ class CustomAdminBase(AdminSite):
 
 class GeneralAdminPanel(CustomAdminBase):
     permissions = 'is_admin_general'
-    model_name = 'GeneralModel'
 
 
 class ManagerAdminPanel(CustomAdminBase):
     permissions = 'is_admin_manager'
-    model_name = 'ManagerModel'
 
 
 class CustomerAdminPanel(CustomAdminBase):
     permissions = 'is_admin_customer'
-    model_name = 'CustomerModel'
 
 
+class SupportAdminPanel(CustomAdminBase):
+    permissions = 'is_admin_support'
+
+
+support_admin = SupportAdminPanel(name='support-admin')
 general_admin = GeneralAdminPanel(name='general-admin')
 manager_admin = ManagerAdminPanel(name='manager-admin')
 customer_admin = CustomerAdminPanel(name='customer-admin')
@@ -80,6 +82,8 @@ class BaseCustomModelAdmin(ModelAdmin):
         name_group = value.split('_')[-1] + '_group'
         obj.is_active = True
         obj.is_staff = True
+        obj.is_superuser = False
+        obj.manager_user = request.user
         my_group, _ = Group.objects.get_or_create(name=name_group)
         setattr(obj, 'password', make_password(obj.password))
         obj.save()
@@ -96,6 +100,10 @@ class ManagerModelAdmin(BaseCustomModelAdmin):
     fields = ('email', 'password', 'first_name', 'last_name', 'phone', 'user_position')
     list_display = ("email", "first_name", "phone", "user_position")
     list_filter = ("user_position",)
+
+    # def get_queryset(self, request):
+    #     queryset = super().get_queryset(request)
+    #     return
 
 
 class CustomerModelAdmin(BaseCustomModelAdmin):
@@ -210,6 +218,7 @@ class ProjectProductAdmin(ModelAdmin):
 
     def price_uniq(self, obj):
         discount = getattr(self.my_user_form, 'discount', 0)
+
         return round(obj.price_sample - (obj.price_sample * (discount / 100)), 2)
 
     def discount(self, obj):
@@ -267,9 +276,11 @@ class AlboProductAdmin(ModelAdmin):
         return obj.my_user_form.discount
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        # if db_field.name == "school":
-        #     kwargs["queryset"] = School.objects.order_by('name')
+        # if db_field.name == "name":
+        #     kwargs["queryset"] = Model.objects.order_by('name')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    price_uniq.short_description = _("Цена со скидкой")
 
 
 class UniqCodeModelAdmin(ModelAdmin):
@@ -292,20 +303,42 @@ class CategoryProductExcludeAdmin(ModelAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
-default_admin.register(UsersGeneralManager, GeneralModelAdmin)
-default_admin.register(MyUser)
-default_admin.register(AlboProductModel, AlboProductAdmin)
-default_admin.register(ProductModel, ProjectProductAdmin)
-default_admin.register(CategoryProduct, CategoryProductAdmin)
-default_admin.register(UsersManager, ManagerModelAdmin)
-default_admin.register(UsersCustomer, CustomerModelAdmin)
-default_admin.register(UniqCodeModel, UniqCodeModelAdmin)
-default_admin.register(PeriodicTimeModel)
-default_admin.register(CategoryProductExclude)
+class CustomerForMangerModelAdmin(CustomerModelAdmin):
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.filter(manager_user=request.user)
+
+
+class CustomerModelForGeneralAdmin(CustomerModelAdmin):
+    # inlines = [CustInline, ]
+    filter_dict = {'resolution_value': 'is_admin_customer'}
+    fields = ('email', 'password', 'first_name', 'last_name', 'phone', 'name_company', 'user_position', 'discount',
+              "manager_user")
+    list_display = ("email", "first_name", "name_company", "phone", "user_position", "discount", "manager_user")
+    list_filter = ("name_company", "discount")
+
+
+class AlboProductForCustomerAdmin(AlboProductAdmin):
+    inlines = []
+    fields = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", "image_tag")
+    readonly_fields = "price_uniq", "full_url", "image_tag"
+
+
+support_admin.register(UsersGeneralManager, GeneralModelAdmin)
+support_admin.register(MyUser)
+support_admin.register(AlboProductModel, AlboProductAdmin)
+support_admin.register(ProductModel, ProjectProductAdmin)
+support_admin.register(CategoryProduct, CategoryProductAdmin)
+support_admin.register(UsersManager, ManagerModelAdmin)
+support_admin.register(UsersCustomer, CustomerModelAdmin)
+support_admin.register(UniqCodeModel, UniqCodeModelAdmin)
+support_admin.register(PeriodicTimeModel)
+support_admin.register(CategoryProductExclude)
 
 general_admin.register(ProductModel, ProjectProductAdmin)
 general_admin.register(CategoryProduct, CategoryProductAdmin)
-general_admin.register(UsersCustomer, CustomerModelAdmin)
+general_admin.register(UsersCustomer, CustomerModelForGeneralAdmin)
 general_admin.register(UsersManager, ManagerModelAdmin)
 general_admin.register(UniqCodeModel, UniqCodeModelAdmin)
 general_admin.register(CategoryProductExclude, CategoryProductExcludeAdmin)
@@ -313,7 +346,7 @@ general_admin.register(AlboProductModel, AlboProductAdmin)
 
 manager_admin.register(ProductModel, ProjectProductAdmin)
 manager_admin.register(CategoryProduct, CategoryProductAdmin)
-manager_admin.register(UsersCustomer, CustomerModelAdmin)
+manager_admin.register(UsersCustomer, CustomerForMangerModelAdmin)
 manager_admin.disable_action('delete_selected')
 manager_admin.register(CategoryProductExclude, CategoryProductExcludeAdmin)
 manager_admin.register(UniqCodeModel, UniqCodeModelAdmin)
@@ -322,7 +355,7 @@ manager_admin.register(AlboProductModel, AlboProductAdmin)
 customer_admin.disable_action('delete_selected')
 customer_admin.register(ProductModel, ProjectProductAdmin)
 customer_admin.register(CategoryProduct, CategoryProductAdmin)
-customer_admin.register(AlboProductModel, AlboProductAdmin)
+customer_admin.register(AlboProductModel, AlboProductForCustomerAdmin)
 
 
 class LogEntryAdmin(ModelAdmin):
@@ -346,21 +379,23 @@ class LogEntryAdmin(ModelAdmin):
         'action_flag',
     ]
 
-default_admin.site_header = 'Albo Panel'
+
+support_admin.site_header = 'Albo Panel'
 manager_admin.site_header = 'Albo Panel'
 general_admin.site_header = 'Albo Panel'
 customer_admin.site_header = 'Albo Panel'
 
-default_admin.site_title = "Albo Admin Portal"
+support_admin.site_title = "Albo Admin Portal"
 general_admin.site_title = "Albo Admin Portal"
 manager_admin.site_title = "Albo Admin Portal"
 customer_admin.site_title = "Albo Admin Portal"
 
-default_admin.index_title = "Welcome to Albo Portal"
+support_admin.index_title = "Welcome to Albo Portal"
 general_admin.index_title = "Welcome to Albo Portal"
 manager_admin.index_title = "Welcome to Albo Portal"
 customer_admin.index_title = "Welcome to Albo Portal"
 
-default_admin.register(LogEntry, LogEntryAdmin)
+support_admin.register(LogEntry, LogEntryAdmin)
+support_admin.register(Group)
 general_admin.register(UserActivityTrack)
-default_admin.register(UserActivityTrack)
+support_admin.register(UserActivityTrack)
