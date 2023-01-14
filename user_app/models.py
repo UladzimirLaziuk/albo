@@ -125,12 +125,13 @@ class AlboProductModel(models.Model):
         if self.url_image_albo:
             return mark_safe('<img src="%s" style="width:180px;height:180px;" />' % (self.url_image_albo))
         return mark_safe('<img src="" alt="%s" style="width:60px; height:60px;" />' % "noimagefound")
+
     @property
     def full_url(self):
         if self.url_describe:
-            return format_html("<a href='%s'>Ссылка на товар %s на сайте </a>" %
-                               (self.url_describe, str(self.describe)[:20]))
+            return format_html("<a href='%s' target='_blank' >Ссылка на товар</a>" % self.url_describe)
         return ''
+
     def __str__(self):
         return '%s' % self.describe
 
@@ -244,11 +245,11 @@ def post_login(sender, user, request, **kwargs):
     # locationInfo = get_location_data__from_ip(ip)
     try:
         UserActivityTrack.objects.create(
-        user=user,
-        session_key=request.session.session_key,
-        ip=request.META.get('REMOTE_ADDR'),
-        user_agent=request.META.get('HTTP_USER_AGENT'),
-    )
+            user=user,
+            session_key=request.session.session_key,
+            ip=request.META.get('REMOTE_ADDR'),
+            user_agent=request.META.get('HTTP_USER_AGENT'),
+        )
     except IntegrityError:
         pass
 
