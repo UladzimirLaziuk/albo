@@ -241,7 +241,7 @@ class OneCCodeAlboModelInlines(StackedInline):
 class AlboProductAdmin(ModelAdmin):
     inlines = [OneCCodeAlboModelInlines, ]
     model = AlboProductModel
-    list_display = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", 'image_tag')
+    list_display = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", "image_tag", "quantity")
     list_filter = ('category_product__name_category', "size_field")
 
     # list_filter = (SimpleHistoryShowDeletedFilter,)
@@ -321,7 +321,7 @@ class CustomerModelForGeneralAdmin(CustomerModelAdmin):
 
 class AlboProductForCustomerAdmin(AlboProductAdmin):
     inlines = []
-    fields = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", "image_tag")
+    fields = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", "image_tag", "quantity")
     readonly_fields = "price_uniq", "full_url", "image_tag"
 
 
@@ -353,7 +353,7 @@ manager_admin.register(UniqCodeModel, UniqCodeModelAdmin)
 manager_admin.register(AlboProductModel, AlboProductAdmin)
 
 customer_admin.disable_action('delete_selected')
-customer_admin.register(ProductModel, ProjectProductAdmin)
+# customer_admin.register(ProductModel, ProjectProductAdmin)
 customer_admin.register(CategoryProduct, CategoryProductAdmin)
 customer_admin.register(AlboProductModel, AlboProductForCustomerAdmin)
 
