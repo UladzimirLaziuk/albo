@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.hashers import make_password
 from user_app.models import MyUser, ProductModel, CategoryProduct, UniqCodeModel, OneCCodeModel, PeriodicTimeModel, \
     CategoryProductExclude, UserActivityTrack, AlboProductModel, OneCCodeAlboModel
+from django.contrib.humanize.templatetags.humanize import intcomma
 
 default_admin = site
 
@@ -125,33 +126,24 @@ class ProductModelAdmin(ModelAdmin):
 class ProductInline(TabularInline):
     model = AlboProductModel
     extra = 1
-    fields = 'uniq_code', 'describe', 'price_sample', 'price_uniq', 'full_url', 'url_describe', 'url_image_albo', 'image_tag', 'size_field', 'quantity'
-    readonly_fields = 'full_url', 'price_uniq', 'image_tag', 'quantity'
+    fields = 'uniq_code', 'describe', 'price_sample', 'full_url', 'url_describe', 'url_image_albo', 'image_tag', 'size_field', 'quantity'
+    readonly_fields = 'full_url', 'image_tag', 'quantity'
 
     def get_queryset(self, request):
         my_query = super().get_queryset(request)
         if request.user.categoryproductexclude_set.exists():
             list_exclude = request.user.categoryproductexclude_set.values_list('exclude_category__name_category')
             my_query = AlboProductModel.objects.exclude(category_product__name_category__in=list_exclude)
-
-        # list_category = my_query.filter(category_product__name_category__isnull=False).values_list(
-        #     'category_product__name_category', flat=True).distinct()
-        # list_query = []
-        # for name_category in list_category:
-        #     list_query.append(my_query.filter(category_product__name_category=name_category).order_by('size_field'))
-        # query_sort = self.model._default_manager.none().union(*list_query)
-
         return my_query.order_by('size_field')
 
     def price_uniq(self, obj):
         discount = getattr(self.my_user_form, 'discount', 0)
         sample_price = obj.price_sample
         if obj.pk:
-            return round(sample_price - (sample_price * (discount / 100)), 2)
+            return intcomma(round(sample_price - (sample_price * (discount / 100)), 2))
         return 0
 
     def url_describe(self, obj):
-        print('-' * 300)
         if getattr(obj, 'url_describe'):
             return format_html("<a href='%s'>Ссылка на товар %s на сайте </a>" %
                                (obj.url_describe, str(obj.describe)[:20]))
@@ -164,6 +156,14 @@ class ProductInline(TabularInline):
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         setattr(self, 'my_user_form', request.user)
         return super().formfield_for_choice_field(db_field, request, **kwargs)
+
+    def field_price_intcomma(self, obj):
+        return intcomma(round(obj.price_sample, 2))
+
+    field_price_intcomma.short_description = _("Цена без скидки")
+
+    price_uniq.short_description = _("Цена со скидкой")
+    image_tag.short_description = _("Ссылка на товар")
 
 
 class CategoryProductAdmin(ModelAdmin):
@@ -218,8 +218,7 @@ class ProjectProductAdmin(ModelAdmin):
 
     def price_uniq(self, obj):
         discount = getattr(self.my_user_form, 'discount', 0)
-
-        return round(obj.price_sample - (obj.price_sample * (discount / 100)), 2)
+        return intcomma(round(obj.price_sample - (obj.price_sample * (discount / 100)), 2))
 
     def discount(self, obj):
         return obj.my_user_form.discount
@@ -241,7 +240,7 @@ class OneCCodeAlboModelInlines(StackedInline):
 class AlboProductAdmin(ModelAdmin):
     inlines = [OneCCodeAlboModelInlines, ]
     model = AlboProductModel
-    list_display = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", "image_tag", "quantity")
+    list_display = ("uniq_code", "describe", "field_price_intcomma", "full_url", "image_tag", "quantity")
     list_filter = ('category_product__name_category', "size_field")
 
     # list_filter = (SimpleHistoryShowDeletedFilter,)
@@ -270,7 +269,7 @@ class AlboProductAdmin(ModelAdmin):
 
     def price_uniq(self, obj):
         discount = getattr(self.my_user_form, 'discount', 0)
-        return round(obj.price_sample - (obj.price_sample * (discount / 100)), 2)
+        return intcomma(round(obj.price_sample - (obj.price_sample * (discount / 100)), 2))
 
     def discount(self, obj):
         return obj.my_user_form.discount
@@ -280,7 +279,11 @@ class AlboProductAdmin(ModelAdmin):
         #     kwargs["queryset"] = Model.objects.order_by('name')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+    def field_price_intcomma(self, obj):
+        return intcomma(round(obj.price_sample, 2))
+
     price_uniq.short_description = _("Цена со скидкой")
+    field_price_intcomma.short_description = _("Цена")
 
 
 class UniqCodeModelAdmin(ModelAdmin):
@@ -321,8 +324,15 @@ class CustomerModelForGeneralAdmin(CustomerModelAdmin):
 
 class AlboProductForCustomerAdmin(AlboProductAdmin):
     inlines = []
-    fields = ("uniq_code", "describe", "price_sample", "price_uniq", "full_url", "image_tag", "quantity")
-    readonly_fields = "price_uniq", "full_url", "image_tag"
+    fields = ("uniq_code", "describe", "field_price_intcomma", "price_uniq", "full_url", "image_tag", "quantity")
+    readonly_fields = "price_uniq", "full_url", "image_tag", "field_price_intcomma"
+    list_display = ("uniq_code", "describe", "field_price_intcomma", "price_uniq", "full_url", "image_tag", "quantity")
+
+class ProductInlineForCustomer(ProductInline):
+    fields = 'uniq_code', 'describe', 'field_price_intcomma', 'price_uniq', 'full_url', 'url_describe', 'url_image_albo', 'image_tag', 'size_field', 'quantity'
+    readonly_fields = 'full_url', 'price_uniq', 'image_tag', 'quantity', 'field_price_intcomma'
+class CategoryProductForCustomerAdmin(CategoryProductAdmin):
+    inlines = [ProductInlineForCustomer, ]
 
 
 support_admin.register(UsersGeneralManager, GeneralModelAdmin)
@@ -354,7 +364,7 @@ manager_admin.register(AlboProductModel, AlboProductAdmin)
 
 customer_admin.disable_action('delete_selected')
 # customer_admin.register(ProductModel, ProjectProductAdmin)
-customer_admin.register(CategoryProduct, CategoryProductAdmin)
+customer_admin.register(CategoryProduct, CategoryProductForCustomerAdmin)
 customer_admin.register(AlboProductModel, AlboProductForCustomerAdmin)
 
 

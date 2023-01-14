@@ -113,14 +113,15 @@ class AlboProductModel(models.Model):
                                    null=True)
     url_image_albo = models.URLField(verbose_name="Ссылка на фото товара на сайте", blank=True, null=True,
                                      max_length=255)
-    price_sample = models.FloatField(verbose_name='Цена обычная', default=0)
-    quantity = models.IntegerField(null=True, default=0)
+    price_sample = models.FloatField(verbose_name='Цена', default=0)
+    quantity = models.IntegerField(null=True, default=0, verbose_name='Количество')
     size_field = models.FloatField(verbose_name='Размер', default=0)
 
     class Meta:
         verbose_name = "Продукт Albo"
         verbose_name_plural = "Продукты Albo"
 
+    @property
     def image_tag(self):
         if self.url_image_albo:
             return mark_safe('<img src="%s" style="width:180px;height:180px;" />' % (self.url_image_albo))
@@ -132,6 +133,8 @@ class AlboProductModel(models.Model):
             return format_html("<a href='%s' target='_blank' >Ссылка на товар</a>" % self.url_describe)
         return ''
 
+    full_url.fget.short_description = _("Ссылка на товар")
+    image_tag.fget.short_description = _("Фото товара")
     def __str__(self):
         return '%s' % self.describe
 
