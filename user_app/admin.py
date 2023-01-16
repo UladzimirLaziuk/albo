@@ -346,6 +346,8 @@ support_admin.register(UniqCodeModel, UniqCodeModelAdmin)
 support_admin.register(PeriodicTimeModel)
 support_admin.register(CategoryProductExclude)
 
+general_admin.register(PeriodicTimeModel)
+general_admin.register(UsersGeneralManager, GeneralModelAdmin)
 general_admin.register(ProductModel, ProjectProductAdmin)
 general_admin.register(CategoryProduct, CategoryProductAdmin)
 general_admin.register(UsersCustomer, CustomerModelForGeneralAdmin)
