@@ -163,7 +163,7 @@ class ProductInline(TabularInline):
     field_price_intcomma.short_description = _("Цена без скидки")
 
     price_uniq.short_description = _("Цена со скидкой")
-    image_tag.short_description = _("Ссылка на товар")
+    image_tag.short_description = _("Фото товара")
 
 
 class CategoryProductAdmin(ModelAdmin):
@@ -329,7 +329,7 @@ class AlboProductForCustomerAdmin(AlboProductAdmin):
     list_display = ("uniq_code", "describe", "field_price_intcomma", "price_uniq", "full_url", "image_tag", "quantity")
 
 class ProductInlineForCustomer(ProductInline):
-    fields = 'uniq_code', 'describe', 'field_price_intcomma', 'price_uniq', 'full_url', 'url_describe', 'url_image_albo', 'image_tag', 'size_field', 'quantity'
+    fields = 'uniq_code', 'describe', 'field_price_intcomma', 'price_uniq', 'full_url', 'image_tag', 'size_field', 'quantity'
     readonly_fields = 'full_url', 'price_uniq', 'image_tag', 'quantity', 'field_price_intcomma'
 class CategoryProductForCustomerAdmin(CategoryProductAdmin):
     inlines = [ProductInlineForCustomer, ]
