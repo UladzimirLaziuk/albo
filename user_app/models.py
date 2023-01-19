@@ -41,7 +41,8 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, full_name=None, profile_picture=None, password=None, resolution_value=None,**extra_fields):
+    def create_superuser(self, email, full_name=None, profile_picture=None, password=None, resolution_value=None,
+                         **extra_fields):
         if not email:
             raise ValueError("User must have an email")
         if not password:
@@ -57,7 +58,7 @@ class UserManager(BaseUserManager):
         user.is_staff = True
         user.is_active = True
         user.is_superuser = True
-        user.resolution_value= resolution_value
+        user.resolution_value = resolution_value
         user.save(using=self._db)
         return user
 
@@ -80,6 +81,11 @@ class MyUser(AbstractUser):
         verbose_name = "App User"
         verbose_name_plural = "App Users"
 
+    def has_usable_password(self):
+        if self.resolution_value == 'is_admin_customer':
+            return False
+        return super().has_usable_password()
+
     @property
     def get_full_name(self):
         if self.username:
@@ -89,6 +95,8 @@ class MyUser(AbstractUser):
     # def __str__(self):
     #     return '%s. %s' % (self.username[:1], self.last_name)
 
+
+# MyUser.has_usable_password()
 
 class CategoryProduct(models.Model):
     name_category = models.CharField(max_length=120, default='', verbose_name='Категории товара')
@@ -136,6 +144,7 @@ class AlboProductModel(models.Model):
 
     full_url.fget.short_description = _("Ссылка на товар")
     image_tag.fget.short_description = _("Фото товара")
+
     def __str__(self):
         return '%s' % self.describe
 
