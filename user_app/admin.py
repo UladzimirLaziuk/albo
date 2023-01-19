@@ -37,6 +37,11 @@ class ManagerAdminPanel(CustomAdminBase):
 class CustomerAdminPanel(CustomAdminBase):
     permissions = 'is_admin_customer'
 
+    def get_urls(self):
+        url_pattern = super().get_urls()
+        url_pattern.pop(3)
+        return url_pattern
+
 
 class SupportAdminPanel(CustomAdminBase):
     permissions = 'is_admin_support'
@@ -328,9 +333,12 @@ class AlboProductForCustomerAdmin(AlboProductAdmin):
     readonly_fields = "price_uniq", "full_url", "image_tag", "field_price_intcomma"
     list_display = ("uniq_code", "describe", "field_price_intcomma", "price_uniq", "full_url", "image_tag", "quantity")
 
+
 class ProductInlineForCustomer(ProductInline):
     fields = 'uniq_code', 'describe', 'field_price_intcomma', 'price_uniq', 'full_url', 'image_tag', 'size_field', 'quantity'
     readonly_fields = 'full_url', 'price_uniq', 'image_tag', 'quantity', 'field_price_intcomma'
+
+
 class CategoryProductForCustomerAdmin(CategoryProductAdmin):
     inlines = [ProductInlineForCustomer, ]
 
