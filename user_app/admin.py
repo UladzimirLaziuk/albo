@@ -343,6 +343,10 @@ class CategoryProductForCustomerAdmin(CategoryProductAdmin):
     inlines = [ProductInlineForCustomer, ]
 
 
+class AdminUserActivityTrack(ModelAdmin):
+    readonly_fields = ('login', )
+
+
 support_admin.register(UsersGeneralManager, GeneralModelAdmin)
 support_admin.register(MyUser)
 support_admin.register(AlboProductModel, AlboProductAdmin)
@@ -417,5 +421,9 @@ customer_admin.index_title = "Welcome to Albo Portal"
 
 support_admin.register(LogEntry, LogEntryAdmin)
 support_admin.register(Group)
-general_admin.register(UserActivityTrack)
-support_admin.register(UserActivityTrack)
+
+
+
+
+general_admin.register(UserActivityTrack, AdminUserActivityTrack)
+support_admin.register(UserActivityTrack, AdminUserActivityTrack)

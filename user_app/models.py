@@ -210,7 +210,7 @@ class PeriodicTimeModel(models.Model):
 class UserActivityTrack(models.Model):
     user = models.ForeignKey(MyUser, on_delete=models.CASCADE)
     session_key = models.CharField(max_length=40, db_index=True)
-    login = models.DateTimeField(auto_now_add=True)
+    login = models.DateTimeField(default=timezone.localtime)
     logout = models.DateTimeField(null=True, default=None)
     ip = models.CharField(max_length=255)
     user_agent = models.CharField(max_length=255)
@@ -269,4 +269,5 @@ def post_login(sender, user, request, **kwargs):
 
 @receiver(user_logged_out)
 def post_logged_out(sender, user, request, **kwargs):
-    UserActivityTrack.objects.filter(user=user, session_key=request.session.session_key).update(logout=timezone.now())
+    UserActivityTrack.objects.filter(user=user, session_key=request.session.session_key).update(
+        logout=timezone.localtime())
