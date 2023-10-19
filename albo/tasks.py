@@ -71,18 +71,23 @@ def read_csv(file):
 
     for key, value in tuple_code_for_map:
         my_dict[value] += dict_code_1C[key]
-
+    tuple_code_exclude = models.OneCCodeAlboModel.objects.exclude(uniq_code_one_c__in=dict_code_1C.keys()).values_list(
+        'uniq_code_one_c', 'map_code__uniq_code')
+    dict_exclude = {value: 0 for key, value in tuple_code_exclude}
+    new_dict_full_data = {**my_dict, **dict_exclude}
     os.remove(file)
-    return my_dict
+    return new_dict_full_data
 
 
 def write_result_in_base(data):
-    list_model = models.AlboProductModel.objects.filter(uniq_code__in=data.keys())
+    list_update_quantity = []
+    for obj in models.AlboProductModel.objects.all():
+        quantity = data.get(obj.uniq_code, 0)
+        obj.quantity = quantity
 
-    for obj_model in list_model:
-        obj_model.quantity = data.get(obj_model.uniq_code)
-    if list_model.exists():
-        models.AlboProductModel.objects.bulk_update(list_model, ['quantity'])
+        list_update_quantity.append(obj)
+    if list_update_quantity:
+        models.AlboProductModel.objects.bulk_update(list_update_quantity, ['quantity'])
 
 
 def files_test(filename):
@@ -116,7 +121,6 @@ def dict_writer(data, filename):
     write_result_in_base(data)
     with open(filename, "w", encoding="utf-8") as f_obj:
         writer = csv.writer(f_obj, delimiter=';')
-
         for key, value in data.items():
             writer.writerow([key, value])
 
