@@ -58,9 +58,63 @@ def get_file_ftp(import_ftp_data):
     return file
 
 
+
+def sync_onec_codes(df):
+    """
+    Синхронизация кодов 1C с товарами Albo
+    """
+    logger_celery.debug('Starting sync_onec_codes')
+    
+    if len(df.columns) < 3:
+        logger_celery.warning(f'File has only {len(df.columns)} columns, need 3. Skipping sync.')
+        return 0, 0
+    
+    codes_from_file = set(df[df.columns[0]].astype(str).tolist())
+    df_with_albo = df[df[df.columns[2]].notna() & (df[df.columns[2]] != '')]
+    
+    created_count = 0
+    skipped_count = 0
+    
+    for _, row in df_with_albo.iterrows():
+        code_1c = str(row[df.columns[0]])
+        code_albo = str(row[df.columns[2]]).strip()
+        
+        if not code_albo:
+            continue
+        
+        albo_product = models.AlboProductModel.objects.filter(uniq_code=code_albo).first()
+        if not albo_product:
+            logger_celery.warning(f'Albo product not found: {code_albo}')
+            continue
+        
+        obj, created = models.OneCCodeAlboModel.objects.get_or_create(
+            uniq_code_one_c=code_1c,
+            defaults={'map_code': albo_product}
+        )
+        
+        if created:
+            created_count += 1
+            logger_celery.info(f'Created: {code_1c} -> {code_albo}')
+        else:
+            skipped_count += 1
+    
+    codes_in_db = models.OneCCodeAlboModel.objects.all()
+    codes_to_delete = codes_in_db.exclude(uniq_code_one_c__in=codes_from_file)
+    deleted_count = codes_to_delete.count()
+    
+    if deleted_count > 0:
+        logger_celery.info(f'Deleting {deleted_count} old codes')
+        codes_to_delete.delete()
+    
+    logger_celery.info(f'Sync complete: created={created_count}, skipped={skipped_count}, deleted={deleted_count}')
+    return created_count, deleted_count
+
+
 def read_csv(file):
     df = pd.read_csv(file, delimiter=';')
     my_df = df.copy()
+    
+    sync_onec_codes(my_df)
 
     my_df[my_df.columns[1]] = my_df[my_df.columns[1]].apply(function_with_try_int)
     dict_code_1C = my_df.set_index(my_df.columns[0])[my_df.columns[1]].to_dict()

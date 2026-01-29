@@ -7,4 +7,5 @@ user_app/migrations/*
 staticfiles/
 celerybeat-schedule
 .env
-.env_dev
+.env_dev*.sqlite3
+*.csv
